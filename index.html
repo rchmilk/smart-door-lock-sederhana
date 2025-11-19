@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#FFFFFF">
+    <title>Smart Lock</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Ionicons -->
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    
+    <style>
+        /* --- 1. Desain Sistem (Light Mode) --- */
+        :root {
+            /* Warna */
+            --bg-color: #F9FAFB;
+            --surface-color: #FFFFFF;
+            --border-color: #E5E7EB;
+            --input-bg: #F3F4F6;
+
+            --primary-color: #3B82F6;
+            --primary-text: #FFFFFF;
+
+            --error-color: #EF4444;
+            --error-bg: #FEE2E2;
+            --success-color: #10B981;
+            --success-bg: #D1FAE5;
+            --warning-color: #F59E0B;
+            --warning-bg: #FEF3C7;
+            --purple-color: #8B5CF6;
+            --purple-bg: #EDE9FE;
+
+            /* Teks */
+            --text-primary: #111827;
+            --text-secondary: #6B7280;
+            --text-placeholder: #9CA3AF;
+            
+            /* Tipografi */
+            --font-family: 'Inter', -apple-system, sans-serif;
+            --title-large: 700 2.125rem/2.5rem var(--font-family);
+            --title-medium: 500 1rem/1.5rem var(--font-family);
+            --body: 400 0.95rem/1.375rem var(--font-family);
+            --label-medium: 500 0.75rem/1rem var(--font-family);
+
+            /* Bentuk */
+            --radius-large: 16px;
+            --radius-medium: 12px;
+            --radius-full: 999px;
+        }
+
+        /* --- 2. Gaya Dasar & Tata Letak Tab --- */
+        
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 1rem 1rem 90px 1rem;
+        }
+
+        main {
+            max-width: 600px;
+            margin: 0 auto;
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .tab-content {
+            display: none;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .tab-content.active {
+            display: flex;
+        }
+        
+        .page-title {
+            font: var(--title-large);
+            color: var(--text-primary);
+            margin: 0.5rem 0 1rem 0;
+        }
+
+        /* --- 3. Navigasi Bawah --- */
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 320px;
+            display: flex;
+            background-color: var(--surface-color);
+            border-radius: var(--radius-full);
+            border: 1px solid var(--border-color);
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 2px 0;
+        }
+
+        .nav-button {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 0 8px 0;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font: var(--label-medium);
+            gap: 4px;
+            border-radius: var(--radius-full);
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        .nav-button ion-icon { 
+            font-size: 1.5rem;
+            margin-bottom: -2px;
+        }
+
+        .nav-button.active {
+            color: var(--primary-color);
+            background-color: #EBF2FE;
+        }
+
+        /* --- 4. Komponen UI --- */
+
+        .card {
+            background-color: var(--surface-color);
+            border-radius: var(--radius-large);
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+        .card h2 {
+            font: var(--title-medium);
+            margin: 0 0 1.25rem 0;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* Badge Bulan */
+        .month-badge {
+            font-size: 0.75rem;
+            background-color: var(--input-bg);
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            color: var(--text-primary);
+        }
+
+        /* Status Box */
+        #status-box {
+            padding: 1.5rem;
+            border-radius: var(--radius-medium);
+            text-align: center;
+            font: var(--title-large);
+            font-size: 1.75rem;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            margin-bottom: 0.5rem;
+        }
+        #status-box.locked {
+            background-color: var(--error-bg);
+            color: var(--error-color);
+        }
+        #status-box.unlocked {
+            background-color: var(--success-bg);
+            color: var(--success-color);
+        }
+        #last-access {
+            text-align: center;
+            font: var(--label-medium);
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        /* Buttons */
+        .button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 1.5rem;
+            height: 48px;
+            border: none;
+            border-radius: var(--radius-full);
+            font: var(--body);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .button:hover { filter: brightness(0.95); }
+
+        .button-primary { background-color: var(--primary-color); color: var(--primary-text); }
+        .button-danger { background-color: var(--error-bg); color: var(--error-color); }
+        
+        .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        /* Inputs */
+        .input-wrapper {
+            width: 100%;
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-medium);
+            padding: 14px 1rem;
+            margin-bottom: 1rem;
+            transition: border-color 0.2s;
+        }
+        .input-wrapper:focus-within {
+            border-color: var(--primary-color);
+            background-color: var(--surface-color);
+        }
+        .input-wrapper input,
+        .input-wrapper select,
+        .input-wrapper input[type="time"] {
+            width: 100%;
+            background: none;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font: var(--body);
+        }
+        .form-label {
+            font: var(--body);
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        /* Toggle */
+        .switch-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: var(--input-bg);
+            padding: 1rem;
+            border-radius: var(--radius-medium);
+        }
+        .switch-toggle {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 26px;
+        }
+        .switch-toggle input { display: none; }
+        .switch-track {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #CCC;
+            border-radius: var(--radius-full);
+            transition: .3s;
+        }
+        .switch-thumb {
+            position: absolute;
+            content: '';
+            height: 22px;
+            width: 22px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            border-radius: 50%;
+            transition: .3s;
+        }
+        .switch-toggle input:checked + .switch-track { background-color: var(--primary-color); }
+        .switch-toggle input:checked + .switch-track .switch-thumb { transform: translateX(18px); }
+
+        /* --- 5. Fitur Baru: Day Selector --- */
+        .day-selector {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            margin-top: 0.5rem;
+        }
+        .day-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background-color: var(--surface-color);
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .day-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        /* --- 6. Fitur Baru: Monthly Summary Cards --- */
+        .summary-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .summary-card {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-radius: var(--radius-medium);
+            background-color: var(--input-bg);
+            gap: 12px;
+        }
+        .summary-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+        .summary-content {
+            flex: 1;
+        }
+        .summary-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+        .summary-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        /* --- NEW: Summary Breakdown Styles --- */
+        .summary-breakdown {
+            display: flex;
+            width: 100%;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(0,0,0,0.05);
+            gap: 12px;
+        }
+        .breakdown-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+        .breakdown-item span {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Variasi Warna Summary */
+        .summary-card.purple .summary-icon { background-color: var(--purple-bg); color: var(--purple-color); }
+        .summary-card.red .summary-icon { background-color: var(--error-bg); color: var(--error-color); }
+        .summary-card.blue .summary-icon { background-color: #EBF2FE; color: var(--primary-color); }
+
+        /* --- 7. Popup Modal Styles (NEW) --- */
+        .popup-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.4); /* Dimmed background */
+            z-index: 200; /* Above nav bar */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            backdrop-filter: blur(4px); /* Glass effect */
+        }
+        .popup-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .popup-content {
+            background-color: var(--surface-color);
+            padding: 2rem;
+            border-radius: 24px; /* Extra rounded corners */
+            width: 85%;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transform: scale(0.9);
+            transition: transform 0.2s ease;
+        }
+        .popup-overlay.show .popup-content {
+            transform: scale(1);
+        }
+        .popup-icon-wrapper {
+            color: var(--error-color);
+            font-size: 4rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: center;
+        }
+        .popup-content h3 {
+            font: var(--title-medium);
+            font-size: 1.25rem;
+            margin: 0 0 0.5rem 0;
+            color: var(--text-primary);
+        }
+        .popup-content p {
+            color: var(--text-secondary);
+            margin: 0 0 1.5rem 0;
+            font-size: 0.95rem;
+        }
+
+        /* Log */
+        #log-list { list-style: none; padding: 0; margin: 0; max-height: 300px; overflow-y: auto; }
+        #log-list li {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 4px; border-bottom: 1px solid var(--border-color); font: var(--body);
+        }
+        #log-list li:last-child { border: none; }
+        #log-list li .log-time { font-size: 0.8em; color: var(--text-secondary); }
+        #log-list li .log-status { font-weight: 500; display: flex; align-items: center; gap: 6px; }
+        .log-status ion-icon { font-size: 1rem; } 
+        .log-status.success { color: var(--success-color); }
+        .log-status.fail { color: var(--error-color); }
+        .log-status.auto { color: var(--purple-color); }
+        .log-status.schedule { color: var(--warning-color); }
+
+    </style>
+</head>
+<body>
+
+    <!-- POPUP MODAL (Hidden by default) -->
+    <div id="error-popup" class="popup-overlay">
+        <div class="popup-content">
+            <div class="popup-icon-wrapper">
+                <ion-icon name="close-circle"></ion-icon>
+            </div>
+            <h3>Access Denied</h3>
+            <p>Incorrect PIN entered. Please try again.</p>
+            <button id="btn-close-popup" class="button button-primary" style="width: 100%">Try Again</button>
+        </div>
+    </div>
+
+    <main>
+
+        <!-- TAB KONTROL -->
+        <div id="tab-kontrol" class="tab-content active">
+            <h1 class="page-title">Control</h1>
+            
+            <div class="card">
+                <div id="status-box" class="locked">Loading...</div>
+                <p id="last-access">Last access: -</p>
+            </div>
+            
+            <div class="card">
+                <div class="input-wrapper">
+                    <input type="password" id="pin-input" placeholder="Enter PIN" required>
+                </div>
+                <div class="controls-grid">
+                    <button id="btn-unlock" class="button button-primary">
+                        <ion-icon name="lock-open"></ion-icon> Unlock
+                    </button>
+                    <button id="btn-lock" class="button button-danger">
+                        <ion-icon name="lock-closed"></ion-icon> Lock
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB ANALISIS -->
+        <div id="tab-analisis" class="tab-content">
+            <h1 class="page-title">Analytics</h1>
+            
+            <!-- Summary Baru -->
+            <div class="card">
+                <h2>Monthly Summary <span class="month-badge" id="current-month-badge">Oct</span></h2>
+                
+                <div class="summary-list">
+                    <!-- Auto-Lock Metric -->
+                    <div class="summary-card purple">
+                        <div class="summary-icon">
+                            <ion-icon name="timer"></ion-icon>
+                        </div>
+                        <div class="summary-content">
+                            <p class="summary-label">Auto-Lock Triggers</p>
+                            <p class="summary-value" id="stat-autolock">0</p>
+                        </div>
+                    </div>
+
+                    <!-- Security Metric -->
+                    <div class="summary-card red">
+                        <div class="summary-icon">
+                            <ion-icon name="warning"></ion-icon>
+                        </div>
+                        <div class="summary-content">
+                            <p class="summary-label">Security Threats (3x Fail)</p>
+                            <p class="summary-value" id="stat-threats">0</p>
+                        </div>
+                    </div>
+
+                     <!-- Total Metric WITH BREAKDOWN -->
+                     <div class="summary-card blue" style="flex-direction: column; align-items: flex-start;">
+                        <div style="display: flex; align-items: center; width: 100%; gap: 12px;">
+                            <div class="summary-icon">
+                                <ion-icon name="swap-vertical"></ion-icon>
+                            </div>
+                            <div class="summary-content">
+                                <p class="summary-label">Total Activity</p>
+                                <p class="summary-value" id="stat-total">0</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Breakdown Section -->
+                        <div class="summary-breakdown">
+                             <div class="breakdown-item">
+                                Unlocks
+                                <span id="stat-monthly-unlocks" style="color: var(--success-color);">0</span>
+                             </div>
+                             <div class="breakdown-item">
+                                Locks
+                                <span id="stat-monthly-locks" style="color: var(--text-primary);">0</span>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Activity Log</h2>
+                <ul id="log-list">
+                    <li>Loading logs...</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- TAB PENGATURAN -->
+        <div id="tab-pengaturan" class="tab-content">
+            <h1 class="page-title">Settings</h1>
+            
+            <div class="card">
+                <h2>Automation</h2>
+                
+                <label class="form-label" for="auto-lock-select">Auto-lock after (timer)</label>
+                <div class="input-wrapper" style="margin-bottom: 1.5rem;">
+                    <select id="auto-lock-select">
+                        <option value="0">Don't Auto-Lock</option>
+                        <option value="30">30 Seconds</option>
+                        <option value="60">1 Minute</option>
+                        <option value="300">5 Minutes</option>
+                    </select>
+                </div>
+                
+                <!-- Schedule Toggle -->
+                <div class="switch-wrapper" style="margin-bottom: 1rem;">
+                    <label for="schedule-enabled"><b>Enable Schedule</b></label>
+                    <label class="switch-toggle">
+                        <input type="checkbox" id="schedule-enabled">
+                        <div class="switch-track"><div class="switch-thumb"></div></div>
+                    </label>
+                </div>
+
+                <!-- Day Selector (New) -->
+                <label class="form-label">Repeat on</label>
+                <div class="day-selector" id="day-selector">
+                    <button type="button" class="day-btn" data-day="mon">M</button>
+                    <button type="button" class="day-btn" data-day="tue">T</button>
+                    <button type="button" class="day-btn" data-day="wed">W</button>
+                    <button type="button" class="day-btn" data-day="thu">T</button>
+                    <button type="button" class="day-btn" data-day="fri">F</button>
+                    <button type="button" class="day-btn" data-day="sat">S</button>
+                    <button type="button" class="day-btn" data-day="sun">S</button>
+                </div>
+                
+                <label class="form-label" for="schedule-lock-time">Lock Time</label>
+                <div class="input-wrapper" style="margin-bottom: 1rem;">
+                    <input type="time" id="schedule-lock-time">
+                </div>
+                
+                <label class="form-label" for="schedule-unlock-time">Unlock Time</label>
+                <div class="input-wrapper" style="margin-bottom: 1.5rem;">
+                    <input type="time" id="schedule-unlock-time">
+                </div>
+
+                <button id="btn-save-config" class="button button-primary" style="width: 100%;">
+                    <ion-icon name="save"></ion-icon>
+                    Save Settings
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <nav class="bottom-nav">
+        <button class="nav-button active" data-tab="kontrol">
+            <ion-icon name="lock-closed"></ion-icon>
+            Control
+        </button>
+        <button class="nav-button" data-tab="analisis">
+            <ion-icon name="bar-chart"></ion-icon>
+            Analytics
+        </button>
+        <button class="nav-button" data-tab="pengaturan">
+            <ion-icon name="settings"></ion-icon>
+            Settings
+        </button>
+    </nav>
+
+
+    <script>
+        const API_URL = 'http://127.0.0.1:5000';
+
+        // --- Elements ---
+        const statusBox = document.getElementById('status-box');
+        const lastAccessEl = document.getElementById('last-access');
+        const pinInput = document.getElementById('pin-input');
+        const unlockButton = document.getElementById('btn-unlock');
+        const lockButton = document.getElementById('btn-lock');
+        const logList = document.getElementById('log-list');
+        
+        // Popup Elements
+        const errorPopup = document.getElementById('error-popup');
+        const closePopupButton = document.getElementById('btn-close-popup');
+
+        // Analytics Elements
+        const statAutoLock = document.getElementById('stat-autolock');
+        const statThreats = document.getElementById('stat-threats');
+        const statTotal = document.getElementById('stat-total');
+        const currentMonthBadge = document.getElementById('current-month-badge');
+        // New Breakdown Elements
+        const statMonthlyUnlocks = document.getElementById('stat-monthly-unlocks');
+        const statMonthlyLocks = document.getElementById('stat-monthly-locks');
+
+
+        // Config Elements
+        const autoLockSelect = document.getElementById('auto-lock-select');
+        const scheduleEnabledCheckbox = document.getElementById('schedule-enabled');
+        const scheduleLockTimeInput = document.getElementById('schedule-lock-time');
+        const scheduleUnlockTimeInput = document.getElementById('schedule-unlock-time');
+        const saveConfigButton = document.getElementById('btn-save-config');
+        const dayButtons = document.querySelectorAll('.day-btn');
+
+        // --- Navigation Logic ---
+        const navButtons = document.querySelectorAll('.nav-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        navButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabId = button.getAttribute('data-tab');
+                navButtons.forEach(btn => btn.classList.remove('active'));
+                tabContents.forEach(tab => tab.classList.remove('active'));
+                button.classList.add('active');
+                document.getElementById('tab-' + tabId).classList.add('active');
+            });
+        });
+
+        // --- Popup Logic ---
+        function showPopup() {
+            errorPopup.classList.add('show');
+        }
+        
+        function closePopup() {
+            errorPopup.classList.remove('show');
+            pinInput.value = ''; 
+            pinInput.focus();
+        }
+
+        closePopupButton.addEventListener('click', closePopup);
+        errorPopup.addEventListener('click', (e) => {
+            if(e.target === errorPopup) closePopup();
+        });
+
+        // --- Day Selector Logic ---
+        let selectedDays = ['mon', 'tue', 'wed', 'thu', 'fri']; // Default
+        
+        dayButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const day = btn.getAttribute('data-day');
+                if (selectedDays.includes(day)) {
+                    selectedDays = selectedDays.filter(d => d !== day);
+                    btn.classList.remove('active');
+                } else {
+                    selectedDays.push(day);
+                    btn.classList.add('active');
+                }
+            });
+        });
+
+        function updateDayButtons() {
+            dayButtons.forEach(btn => {
+                const day = btn.getAttribute('data-day');
+                if (selectedDays.includes(day)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        // --- Fetch Status ---
+        async function fetchStatus() {
+            try {
+                const response = await fetch(`${API_URL}/door/status`);
+                const data = await response.json();
+                if (data.locked) {
+                    statusBox.textContent = 'LOCKED';
+                    statusBox.className = 'locked';
+                } else {
+                    statusBox.textContent = 'UNLOCKED';
+                    statusBox.className = 'unlocked';
+                }
+                lastAccessEl.textContent = `Last access: ${new Date(data.last_access).toLocaleString('en-US')}`;
+            } catch (error) {
+                console.error("Status fetch failed");
+            }
+        }
+
+        // --- Fetch Logs & Calculate Analytics ---
+        async function fetchLogs() {
+            try {
+                const response = await fetch(`${API_URL}/logs`);
+                const data = await response.json();
+                
+                // 1. Populate List
+                renderLogList(data);
+                
+                // 2. Calculate Analytics
+                calculateMonthlyStats(data);
+
+            } catch (error) {
+                logList.innerHTML = '<li>Failed to load logs.</li>';
+            }
+        }
+
+        function renderLogList(logs) {
+            logList.innerHTML = ''; 
+            if (logs.length === 0) {
+                logList.innerHTML = '<li>No logs yet.</li>';
+                return;
+            }
+            // Show only last 20 logs for performance in list
+            logs.slice(0, 20).forEach(log => {
+                const li = document.createElement('li');
+                let actionText = log.action;
+                let statusClass = 'success';
+                let icon = 'checkmark-circle';
+
+                if (log.success) {
+                    if (log.action === 'lock (manual)') { actionText = 'Manual Lock'; statusClass = 'success'; icon = 'lock-closed'; }
+                    else if (log.action === 'unlock (manual)') { actionText = 'Manual Unlock'; statusClass = 'success'; icon = 'lock-open'; }
+                    else if (log.action === 'lock (auto)') { actionText = 'Auto-Lock'; statusClass = 'auto'; icon = 'timer'; }
+                    else if (log.action.includes('schedule')) { actionText = 'Schedule'; statusClass = 'schedule'; icon = 'calendar'; }
+                } else {
+                    actionText = 'Incorrect PIN'; statusClass = 'fail'; icon = 'alert-circle';
+                }
+                
+                li.innerHTML = `
+                    <span class="log-status ${statusClass}">
+                        <ion-icon name="${icon}"></ion-icon>
+                        ${actionText}
+                    </span>
+                    <span class="log-time">${new Date(log.timestamp).toLocaleString('en-US')}</span>
+                `;
+                logList.appendChild(li);
+            });
+        }
+
+        function calculateMonthlyStats(logs) {
+            const now = new Date();
+            const currentMonth = now.getMonth(); // 0-11
+            const currentYear = now.getFullYear();
+
+            // Set Badge Text
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            currentMonthBadge.textContent = monthNames[currentMonth];
+
+            // Filter logs for current month
+            const monthlyLogs = logs.filter(log => {
+                const logDate = new Date(log.timestamp);
+                return logDate.getMonth() === currentMonth && logDate.getFullYear() === currentYear;
+            });
+
+            // Metric 1: Total Activity
+            statTotal.textContent = monthlyLogs.length;
+
+            // Metric 4 (New): Unlocks vs Locks Breakdown
+            const countUnlocks = monthlyLogs.filter(log => log.action.startsWith('unlock')).length;
+            const countLocks = monthlyLogs.filter(log => log.action.startsWith('lock')).length;
+            
+            statMonthlyUnlocks.textContent = countUnlocks;
+            statMonthlyLocks.textContent = countLocks;
+
+
+            // Metric 2: Auto-Lock Triggers (User forgot to lock)
+            const autoLockCount = monthlyLogs.filter(log => log.action === 'lock (auto)').length;
+            statAutoLock.textContent = autoLockCount;
+
+            // Metric 3: Security Threats (3x Consecutive Failures)
+            let threatCount = 0;
+            let consecutiveFails = 0;
+
+            // Sort logs by time ascending for accurate sequence detection
+            const sortedLogs = [...monthlyLogs].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+            sortedLogs.forEach(log => {
+                if (!log.success) {
+                    consecutiveFails++;
+                    if (consecutiveFails === 3) {
+                        threatCount++;
+                        consecutiveFails = 0; // Reset after counting one threat sequence
+                    }
+                } else {
+                    consecutiveFails = 0; // Reset on success
+                }
+            });
+
+            statThreats.textContent = threatCount;
+        }
+
+        // --- Door Control ---
+        async function lockDoor() {
+            try {
+                const response = await fetch(`${API_URL}/door/lock`, { method: 'POST' });
+                const data = await response.json();
+                if (data.success) refreshAllData();
+            } catch (error) { console.error('Lock failed'); }
+        }
+        async function unlockDoor() {
+            const pin = pinInput.value;
+            if (!pin) return;
+            try {
+                const response = await fetch(`${API_URL}/door/unlock`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pin: pin })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    pinInput.value = ''; 
+                    refreshAllData();
+                } else {
+                    fetchLogs(); // Refresh logs first
+                    showPopup(); // TRIGGER POPUP HERE
+                }
+            } catch (error) { console.error('Unlock failed'); }
+        }
+
+        // --- Settings ---
+        async function fetchConfig() {
+            try {
+                const response = await fetch(`${API_URL}/config`);
+                const data = await response.json();
+                autoLockSelect.value = data.auto_lock_delay;
+                scheduleEnabledCheckbox.checked = data.schedule_enabled;
+                scheduleLockTimeInput.value = data.schedule_lock_time;
+                scheduleUnlockTimeInput.value = data.schedule_unlock_time;
+                
+                // Load days if available, otherwise default
+                if (data.days) selectedDays = data.days;
+                updateDayButtons();
+
+            } catch (error) {
+                console.error("Config fetch failed");
+            }
+        }
+        
+        async function saveConfig() {
+            const payload = {
+                auto_lock_delay: parseInt(autoLockSelect.value),
+                schedule_enabled: scheduleEnabledCheckbox.checked,
+                schedule_lock_time: scheduleLockTimeInput.value,
+                schedule_unlock_time: scheduleUnlockTimeInput.value,
+                days: selectedDays // Send selected days
+            };
+            try {
+                const response = await fetch(`${API_URL}/config`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (data.success) fetchConfig();
+            } catch (error) {
+                console.error('Save failed');
+            }
+        }
+
+        function refreshAllData() {
+            fetchStatus();
+            fetchLogs();
+        }
+
+        // --- Init ---
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshAllData();
+            fetchConfig();
+            updateDayButtons();
+            setInterval(refreshAllData, 10000);
+        });
+
+        // Event Listeners
+        lockButton.addEventListener('click', lockDoor);
+        unlockButton.addEventListener('click', unlockDoor);
+        saveConfigButton.addEventListener('click', saveConfig);
+
+    </script>
+</body>
+</html>
