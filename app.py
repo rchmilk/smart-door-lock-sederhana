@@ -1,7 +1,7 @@
 import mysql.connector
 from mysql.connector import Error
 import datetime
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
 from collections import defaultdict
 
@@ -149,6 +149,14 @@ def _perform_unlock(conn, reason="unlock"):
     log_activity(reason, True)
     cursor.close()
     print(f"UNLOCK: Pintu telah dibuka (Alasan: {reason}).")
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/door/status', methods=['GET'])
+def get_door_status():
+    conn = None
 
 @app.route('/door/status', methods=['GET'])
 def get_door_status():
