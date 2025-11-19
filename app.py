@@ -5,25 +5,19 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from collections import defaultdict
 
-# --- Konfigurasi Aplikasi ---
 app = Flask(__name__)
 CORS(app)
 
-# --- KONFIGURASI DATABASE MYSQL ---
 DB_CONFIG = {
-    'host': 'localhost',        
-    'user': 'root',             
-    'password': '', # GANTI DENGAN PASSWORD ANDA (jika ada)
-    'database': 'smartlock_db'  
+    'host': 'localhost',
+    'user': 'root',
+    'password': '',
+    'database': 'smartlock_db'
 }
-# ------------------------------------
 
 CORRECT_PIN = "1234"
 
-# --- Fungsi Inisialisasi Database ---
 def init_db():
-    """Membuat tabel 'door_status', 'logs', dan 'config' jika belum ada"""
-    print("Mencoba koneksi ke MySQL dan inisialisasi tabel...")
     conn = None
     cursor = None
     try:
@@ -35,7 +29,6 @@ def init_db():
         )
         cursor = conn.cursor()
         
-        # 1. Tabel Status Pintu
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS door_status (
             id INT PRIMARY KEY,
@@ -44,7 +37,6 @@ def init_db():
         )
         ''')
         
-        # 2. Tabel Log
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS logs (
             id INT PRIMARY KEY AUTO_INCREMENT,
@@ -54,7 +46,6 @@ def init_db():
         )
         ''')
         
-        # 3. Tabel Konfigurasi (DIPERBARUI DENGAN JADWAL)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS config (
             id INT PRIMARY KEY,
@@ -66,16 +57,11 @@ def init_db():
         )
         ''')
 
-        # --- Masukkan Data Default ---
-        
-        # Status default
         cursor.execute("SELECT * FROM door_status WHERE id = 1")
         if cursor.fetchone() is None:
             cursor.execute("INSERT INTO door_status (id, locked, last_access) VALUES (%s, %s, %s)", 
                            (1, True, datetime.datetime.now()))
-            print("Status pintu default (terkunci) dibuat.")
 
-        # Konfigurasi default (DIPERBARUI)
         cursor.execute("SELECT * FROM config WHERE id = 1")
         if cursor.fetchone() is None:
             query = """
@@ -85,35 +71,27 @@ def init_db():
             """
             values = (1, 30, False, '22:00', '06:00', datetime.datetime.now())
             cursor.execute(query, values)
-            print("Pengaturan config default (auto-lock & schedule) dibuat.")
 
-        # (PENTING) Modifikasi tabel config jika sudah ada tapi kolom baru belum ada
         try:
             cursor.execute("ALTER TABLE config ADD COLUMN schedule_enabled BOOLEAN NOT NULL DEFAULT 0")
             cursor.execute("ALTER TABLE config ADD COLUMN schedule_lock_time VARCHAR(5) NOT NULL DEFAULT '22:00'")
             cursor.execute("ALTER TABLE config ADD COLUMN schedule_unlock_time VARCHAR(5) NOT NULL DEFAULT '06:00'")
             conn.commit()
-            print("Kolom jadwal ditambahkan ke tabel config yang ada.")
         except Error as e:
-            if e.errno == 1060: # Error: Kolom sudah ada
-                pass # Abaikan jika kolom sudah ada, itu normal
-            else:
-                raise # Tampilkan error lain
+            if e.errno != 1060:
+                raise
 
         conn.commit()
-        print("Database dan tabel (door_status, logs, config) siap (MySQL).")
         
     except Error as e:
         print(f"Error saat inisialisasi database MySQL: {e}")
     finally:
         if cursor:
             cursor.close()
-        if 'conn' in locals() and conn and conn.is_connected():
+        if conn and conn.is_connected():
             conn.close()
 
-# --- Fungsi Helper Database ---
 def get_db_conn():
-    """Membuka koneksi baru ke DB MySQL"""
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
         return conn
@@ -122,7 +100,6 @@ def get_db_conn():
         return None
 
 def log_activity(action, success):
-    """Mencatat aktivitas ke tabel logs"""
     conn = None
     cursor = None
     try:
@@ -141,33 +118,24 @@ def log_activity(action, success):
         if conn and conn.is_connected():
             conn.close()
 
-# --- (BARU) Helper Pengunci & Pembuka ---
 def _perform_lock(conn, reason="lock"):
-    """Fungsi internal untuk mengunci pintu & log"""
     cursor = conn.cursor()
     query = "UPDATE door_status SET locked = %s, last_access = %s WHERE id = %s"
     values = (True, datetime.datetime.now(), 1)
     cursor.execute(query, values)
     conn.commit()
-    log_activity(reason, True) # Log dengan alasan (misal: 'lock (auto)')
+    log_activity(reason, True)
     cursor.close()
-    print(f"LOCK: Pintu telah terkunci (Alasan: {reason}).")
 
 def _perform_unlock(conn, reason="unlock"):
-    """Fungsi internal untuk membuka kunci pintu & log"""
     cursor = conn.cursor()
     query = "UPDATE door_status SET locked = %s, last_access = %s WHERE id = %s"
     values = (False, datetime.datetime.now(), 1)
     cursor.execute(query, values)
     conn.commit()
-    log_activity(reason, True) # Log dengan alasan (misal: 'unlock (schedule)')
+    log_activity(reason, True)
     cursor.close()
-    print(f"UNLOCK: Pintu telah dibuka (Alasan: {reason}).")
 
-
-# --- ENDPOINT API INTI ---
-
-# Endpoint 1: Cek Status Pintu (LOGIKA PALING PENTING)
 @app.route('/door/status', methods=['GET'])
 def get_door_status():
     conn = None
@@ -177,9 +145,8 @@ def get_door_status():
         if not conn:
             return jsonify({"error": "Koneksi database gagal"}), 500
             
-        cursor = conn.cursor(dictionary=True) 
+        cursor = conn.cursor(dictionary=True)
         
-        # --- (CHECK 1: LOGIKA AUTO-LOCK TIMER) ---
         cursor.execute("SELECT locked, last_access FROM door_status WHERE id = 1")
         status = cursor.fetchone()
         cursor.execute("SELECT auto_lock_delay FROM config WHERE id = 1")
@@ -193,12 +160,10 @@ def get_door_status():
             time_since_unlocked = datetime.datetime.now() - last_access_time
             if time_since_unlocked.total_seconds() > delay_seconds:
                 _perform_lock(conn, "lock (auto)")
-                # Ambil ulang status baru
                 cursor.execute("SELECT locked, last_access FROM door_status WHERE id = 1")
                 status = cursor.fetchone()
-                is_locked = bool(status['locked']) # Perbarui variabel status
+                is_locked = bool(status['locked'])
         
-        # --- (CHECK 2: LOGIKA SCHEDULED LOCK/UNLOCK) ---
         cursor.execute("SELECT schedule_enabled, schedule_lock_time, schedule_unlock_time FROM config WHERE id = 1")
         schedule_config = cursor.fetchone()
         
@@ -206,14 +171,12 @@ def get_door_status():
             now = datetime.datetime.now()
             current_time_str = now.strftime('%H:%M')
             
-            # Cek apakah sekarang waktunya KUNCI
             if current_time_str == schedule_config['schedule_lock_time'] and not is_locked:
                 _perform_lock(conn, "lock (schedule)")
                 cursor.execute("SELECT locked, last_access FROM door_status WHERE id = 1")
                 status = cursor.fetchone()
                 is_locked = bool(status['locked'])
             
-            # Cek apakah sekarang waktunya BUKA KUNCI
             elif current_time_str == schedule_config['schedule_unlock_time'] and is_locked:
                 _perform_unlock(conn, "unlock (schedule)")
                 cursor.execute("SELECT locked, last_access FROM door_status WHERE id = 1")
@@ -232,7 +195,6 @@ def get_door_status():
         if conn and conn.is_connected():
             conn.close()
 
-# Endpoint 2: Mengunci Pintu
 @app.route('/door/lock', methods=['POST'])
 def lock_door():
     conn = None
@@ -248,7 +210,6 @@ def lock_door():
         if conn and conn.is_connected():
             conn.close()
 
-# Endpoint 3: Membuka Kunci Pintu
 @app.route('/door/unlock', methods=['POST'])
 def unlock_door():
     data = request.get_json()
@@ -268,10 +229,9 @@ def unlock_door():
             if conn and conn.is_connected():
                 conn.close()
     else:
-        log_activity("unlock (fail)", False) 
+        log_activity("unlock (fail)", False)
         return jsonify({"success": False, "message": "Invalid PIN"}), 401
 
-# Endpoint 4: Melihat Log Aktivitas
 @app.route('/logs', methods=['GET'])
 def get_logs():
     conn = None
@@ -297,10 +257,8 @@ def get_logs():
         if conn and conn.is_connected():
             conn.close()
 
-# Endpoint 5: Cek Kesehatan Sistem
 @app.route('/health', methods=['GET'])
 def health_check():
-    # ... (tidak berubah) ...
     conn = None
     try:
         conn = get_db_conn()
@@ -312,9 +270,6 @@ def health_check():
         if conn and conn.is_connected():
             conn.close()
 
-# --- ENDPOINT PENGATURAN / KONFIGURASI ---
-
-# Endpoint 6: Mengambil Pengaturan
 @app.route('/config', methods=['GET'])
 def get_config():
     conn = None
@@ -327,7 +282,7 @@ def get_config():
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT auto_lock_delay, schedule_enabled, schedule_lock_time, schedule_unlock_time FROM config WHERE id = 1")
         config = cursor.fetchone()
-        config['schedule_enabled'] = bool(config['schedule_enabled']) # Konversi ke boolean
+        config['schedule_enabled'] = bool(config['schedule_enabled'])
         return jsonify(config)
     except Error as e:
         return jsonify({"error": str(e)}), 500
@@ -337,14 +292,12 @@ def get_config():
         if conn and conn.is_connected():
             conn.close()
 
-# Endpoint 7: Memperbarui Pengaturan
 @app.route('/config', methods=['PUT'])
 def update_config():
     data = request.get_json()
     conn = None
     cursor = None
     try:
-        # Ambil dan validasi semua data
         new_delay = int(data.get('auto_lock_delay', 30))
         new_schedule_enabled = bool(data.get('schedule_enabled', False))
         new_schedule_lock = data.get('schedule_lock_time', '22:00')
@@ -378,13 +331,8 @@ def update_config():
         if conn and conn.is_connected():
             conn.close()
 
-
-# --- ANALYTICS ENDPOINTS ---
-
-# Analisis 1: Aktivitas per Jam
 @app.route('/analytics/activity_by_hour', methods=['GET'])
 def get_activity_by_hour():
-    # ... (tidak berubah) ...
     conn = None
     cursor = None
     try:
@@ -410,10 +358,8 @@ def get_activity_by_hour():
         if cursor: cursor.close()
         if conn: conn.close()
 
-# Analisis 2: Aktivitas Harian
 @app.route('/analytics/daily_activity', methods=['GET'])
 def get_daily_activity():
-    # ... (tidak berubah) ...
     conn = None
     cursor = None
     try:
@@ -435,10 +381,8 @@ def get_daily_activity():
         if cursor: cursor.close()
         if conn: conn.close()
 
-# Analisis 3: Durasi Tidak Terkunci
 @app.route('/analytics/unlocked_duration', methods=['GET'])
 def get_unlocked_duration():
-    # ... (tidak berubah) ...
     conn = None
     cursor = None
     try:
@@ -479,10 +423,8 @@ def get_unlocked_duration():
         if cursor: cursor.close()
         if conn: conn.close()
 
-# Analisis 4: Deteksi Ancaman
 @app.route('/analytics/threats', methods=['GET'])
 def get_threat_logs():
-    # ... (tidak berubah) ...
     conn = None
     cursor = None
     try:
@@ -506,7 +448,6 @@ def get_threat_logs():
         if cursor: cursor.close()
         if conn: conn.close()
 
-# Analisis 5: Total Buka/Tutup
 @app.route('/analytics/total_counts', methods=['GET'])
 def get_total_counts():
     conn = None
@@ -516,10 +457,6 @@ def get_total_counts():
         if not conn:
             return jsonify({"error": "Koneksi database gagal"}), 500
         
-        # PERBAIKAN: Menggunakan query SQL yang jauh lebih baik untuk
-        # menghitung total 'lock' dan 'unlock' secara terpisah
-        # LIKE 'unlock%' HANYA akan cocok dengan 'unlock (manual)', 'unlock (schedule)', dll.
-        # LIKE 'lock%' HANYA akan cocok dengan 'lock (manual)', 'lock (auto)', dll.
         query = """
             SELECT 
                 (SELECT COUNT(*) FROM logs WHERE success = 1 AND action LIKE 'unlock%') AS total_unlocks,
@@ -528,14 +465,12 @@ def get_total_counts():
         cursor = conn.cursor(dictionary=True)
         cursor.execute(query)
         
-        # Query ini akan mengembalikan SATU baris
         counts = cursor.fetchone()
         
         if not counts:
-             # Jika tabel kosong, kembalikan 0
             return jsonify({"total_locks": 0, "total_unlocks": 0})
             
-        return jsonify(counts) # Langsung kembalikan hasilnya
+        return jsonify(counts)
         
     except Error as e:
         return jsonify({"error": str(e)}), 500
@@ -545,7 +480,6 @@ def get_total_counts():
         if conn and conn.is_connected():
             conn.close()
 
-# --- Menjalankan Server ---
 if __name__ == '__main__':
-    init_db() # Siapkan database dan tabel saat server pertama kali dijalankan
+    init_db()
     app.run(debug=True, port=5000)

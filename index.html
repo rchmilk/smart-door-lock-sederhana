@@ -6,27 +6,21 @@
     <meta name="theme-color" content="#FFFFFF">
     <title>Smart Lock</title>
     
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     
-    <!-- Ionicons -->
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
     
     <style>
-        /* --- 1. Desain Sistem (Light Mode) --- */
         :root {
-            /* Warna */
             --bg-color: #F9FAFB;
             --surface-color: #FFFFFF;
             --border-color: #E5E7EB;
             --input-bg: #F3F4F6;
-
             --primary-color: #3B82F6;
             --primary-text: #FFFFFF;
-
             --error-color: #EF4444;
             --error-bg: #FEE2E2;
             --success-color: #10B981;
@@ -35,27 +29,19 @@
             --warning-bg: #FEF3C7;
             --purple-color: #8B5CF6;
             --purple-bg: #EDE9FE;
-
-            /* Teks */
             --text-primary: #111827;
             --text-secondary: #6B7280;
             --text-placeholder: #9CA3AF;
-            
-            /* Tipografi */
             --font-family: 'Inter', -apple-system, sans-serif;
             --title-large: 700 2.125rem/2.5rem var(--font-family);
             --title-medium: 500 1rem/1.5rem var(--font-family);
             --body: 400 0.95rem/1.375rem var(--font-family);
             --label-medium: 500 0.75rem/1rem var(--font-family);
-
-            /* Bentuk */
             --radius-large: 16px;
             --radius-medium: 12px;
             --radius-full: 999px;
         }
 
-        /* --- 2. Gaya Dasar & Tata Letak Tab --- */
-        
         * { box-sizing: border-box; }
 
         body {
@@ -89,8 +75,6 @@
             margin: 0.5rem 0 1rem 0;
         }
 
-        /* --- 3. Navigasi Bawah --- */
-        
         .bottom-nav {
             position: fixed;
             bottom: 1rem;
@@ -133,8 +117,6 @@
             background-color: #EBF2FE;
         }
 
-        /* --- 4. Komponen UI --- */
-
         .card {
             background-color: var(--surface-color);
             border-radius: var(--radius-large);
@@ -150,7 +132,6 @@
             align-items: center;
         }
         
-        /* Badge Bulan */
         .month-badge {
             font-size: 0.75rem;
             background-color: var(--input-bg);
@@ -159,7 +140,6 @@
             color: var(--text-primary);
         }
 
-        /* Status Box */
         #status-box {
             padding: 1.5rem;
             border-radius: var(--radius-medium);
@@ -185,7 +165,6 @@
             margin: 0;
         }
 
-        /* Buttons */
         .button {
             display: flex;
             align-items: center;
@@ -207,7 +186,6 @@
         
         .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-        /* Inputs */
         .input-wrapper {
             width: 100%;
             background-color: var(--input-bg);
@@ -239,7 +217,6 @@
             display: block;
         }
 
-        /* Toggle */
         .switch-wrapper {
             display: flex;
             align-items: center;
@@ -277,7 +254,6 @@
         .switch-toggle input:checked + .switch-track { background-color: var(--primary-color); }
         .switch-toggle input:checked + .switch-track .switch-thumb { transform: translateX(18px); }
 
-        /* --- 5. Fitur Baru: Day Selector --- */
         .day-selector {
             display: flex;
             justify-content: space-between;
@@ -305,7 +281,6 @@
             border-color: var(--primary-color);
         }
 
-        /* --- 6. Fitur Baru: Monthly Summary Cards --- */
         .summary-list {
             display: flex;
             flex-direction: column;
@@ -344,7 +319,6 @@
             margin: 0;
         }
         
-        /* --- NEW: Summary Breakdown Styles --- */
         .summary-breakdown {
             display: flex;
             width: 100%;
@@ -366,24 +340,22 @@
             color: var(--text-primary);
         }
 
-        /* Variasi Warna Summary */
         .summary-card.purple .summary-icon { background-color: var(--purple-bg); color: var(--purple-color); }
         .summary-card.red .summary-icon { background-color: var(--error-bg); color: var(--error-color); }
         .summary-card.blue .summary-icon { background-color: #EBF2FE; color: var(--primary-color); }
 
-        /* --- 7. Popup Modal Styles (NEW) --- */
         .popup-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(0, 0, 0, 0.4); /* Dimmed background */
-            z-index: 200; /* Above nav bar */
+            background-color: rgba(0, 0, 0, 0.4);
+            z-index: 200;
             display: flex;
             align-items: center;
             justify-content: center;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.2s ease;
-            backdrop-filter: blur(4px); /* Glass effect */
+            backdrop-filter: blur(4px);
         }
         .popup-overlay.show {
             opacity: 1;
@@ -392,7 +364,7 @@
         .popup-content {
             background-color: var(--surface-color);
             padding: 2rem;
-            border-radius: 24px; /* Extra rounded corners */
+            border-radius: 24px;
             width: 85%;
             max-width: 320px;
             text-align: center;
@@ -422,7 +394,6 @@
             font-size: 0.95rem;
         }
 
-        /* Log */
         #log-list { list-style: none; padding: 0; margin: 0; max-height: 300px; overflow-y: auto; }
         #log-list li {
             display: flex; justify-content: space-between; align-items: center;
@@ -441,7 +412,6 @@
 </head>
 <body>
 
-    <!-- POPUP MODAL (Hidden by default) -->
     <div id="error-popup" class="popup-overlay">
         <div class="popup-content">
             <div class="popup-icon-wrapper">
@@ -455,7 +425,6 @@
 
     <main>
 
-        <!-- TAB KONTROL -->
         <div id="tab-kontrol" class="tab-content active">
             <h1 class="page-title">Control</h1>
             
@@ -479,16 +448,13 @@
             </div>
         </div>
 
-        <!-- TAB ANALISIS -->
         <div id="tab-analisis" class="tab-content">
             <h1 class="page-title">Analytics</h1>
             
-            <!-- Summary Baru -->
             <div class="card">
                 <h2>Monthly Summary <span class="month-badge" id="current-month-badge">Oct</span></h2>
                 
                 <div class="summary-list">
-                    <!-- Auto-Lock Metric -->
                     <div class="summary-card purple">
                         <div class="summary-icon">
                             <ion-icon name="timer"></ion-icon>
@@ -499,7 +465,6 @@
                         </div>
                     </div>
 
-                    <!-- Security Metric -->
                     <div class="summary-card red">
                         <div class="summary-icon">
                             <ion-icon name="warning"></ion-icon>
@@ -510,7 +475,6 @@
                         </div>
                     </div>
 
-                     <!-- Total Metric WITH BREAKDOWN -->
                      <div class="summary-card blue" style="flex-direction: column; align-items: flex-start;">
                         <div style="display: flex; align-items: center; width: 100%; gap: 12px;">
                             <div class="summary-icon">
@@ -522,7 +486,6 @@
                             </div>
                         </div>
                         
-                        <!-- Breakdown Section -->
                         <div class="summary-breakdown">
                              <div class="breakdown-item">
                                 Unlocks
@@ -545,7 +508,6 @@
             </div>
         </div>
 
-        <!-- TAB PENGATURAN -->
         <div id="tab-pengaturan" class="tab-content">
             <h1 class="page-title">Settings</h1>
             
@@ -562,7 +524,6 @@
                     </select>
                 </div>
                 
-                <!-- Schedule Toggle -->
                 <div class="switch-wrapper" style="margin-bottom: 1rem;">
                     <label for="schedule-enabled"><b>Enable Schedule</b></label>
                     <label class="switch-toggle">
@@ -571,7 +532,6 @@
                     </label>
                 </div>
 
-                <!-- Day Selector (New) -->
                 <label class="form-label">Repeat on</label>
                 <div class="day-selector" id="day-selector">
                     <button type="button" class="day-btn" data-day="mon">M</button>
@@ -621,7 +581,6 @@
     <script>
         const API_URL = 'http://127.0.0.1:5000';
 
-        // --- Elements ---
         const statusBox = document.getElementById('status-box');
         const lastAccessEl = document.getElementById('last-access');
         const pinInput = document.getElementById('pin-input');
@@ -629,21 +588,16 @@
         const lockButton = document.getElementById('btn-lock');
         const logList = document.getElementById('log-list');
         
-        // Popup Elements
         const errorPopup = document.getElementById('error-popup');
         const closePopupButton = document.getElementById('btn-close-popup');
 
-        // Analytics Elements
         const statAutoLock = document.getElementById('stat-autolock');
         const statThreats = document.getElementById('stat-threats');
         const statTotal = document.getElementById('stat-total');
         const currentMonthBadge = document.getElementById('current-month-badge');
-        // New Breakdown Elements
         const statMonthlyUnlocks = document.getElementById('stat-monthly-unlocks');
         const statMonthlyLocks = document.getElementById('stat-monthly-locks');
 
-
-        // Config Elements
         const autoLockSelect = document.getElementById('auto-lock-select');
         const scheduleEnabledCheckbox = document.getElementById('schedule-enabled');
         const scheduleLockTimeInput = document.getElementById('schedule-lock-time');
@@ -651,7 +605,6 @@
         const saveConfigButton = document.getElementById('btn-save-config');
         const dayButtons = document.querySelectorAll('.day-btn');
 
-        // --- Navigation Logic ---
         const navButtons = document.querySelectorAll('.nav-button');
         const tabContents = document.querySelectorAll('.tab-content');
 
@@ -665,7 +618,6 @@
             });
         });
 
-        // --- Popup Logic ---
         function showPopup() {
             errorPopup.classList.add('show');
         }
@@ -681,8 +633,7 @@
             if(e.target === errorPopup) closePopup();
         });
 
-        // --- Day Selector Logic ---
-        let selectedDays = ['mon', 'tue', 'wed', 'thu', 'fri']; // Default
+        let selectedDays = ['mon', 'tue', 'wed', 'thu', 'fri'];
         
         dayButtons.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -708,7 +659,6 @@
             });
         }
 
-        // --- Fetch Status ---
         async function fetchStatus() {
             try {
                 const response = await fetch(`${API_URL}/door/status`);
@@ -726,16 +676,11 @@
             }
         }
 
-        // --- Fetch Logs & Calculate Analytics ---
         async function fetchLogs() {
             try {
                 const response = await fetch(`${API_URL}/logs`);
                 const data = await response.json();
-                
-                // 1. Populate List
                 renderLogList(data);
-                
-                // 2. Calculate Analytics
                 calculateMonthlyStats(data);
 
             } catch (error) {
@@ -749,7 +694,6 @@
                 logList.innerHTML = '<li>No logs yet.</li>';
                 return;
             }
-            // Show only last 20 logs for performance in list
             logs.slice(0, 20).forEach(log => {
                 const li = document.createElement('li');
                 let actionText = log.action;
@@ -778,39 +722,31 @@
 
         function calculateMonthlyStats(logs) {
             const now = new Date();
-            const currentMonth = now.getMonth(); // 0-11
+            const currentMonth = now.getMonth();
             const currentYear = now.getFullYear();
 
-            // Set Badge Text
             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
             currentMonthBadge.textContent = monthNames[currentMonth];
 
-            // Filter logs for current month
             const monthlyLogs = logs.filter(log => {
                 const logDate = new Date(log.timestamp);
                 return logDate.getMonth() === currentMonth && logDate.getFullYear() === currentYear;
             });
 
-            // Metric 1: Total Activity
             statTotal.textContent = monthlyLogs.length;
 
-            // Metric 4 (New): Unlocks vs Locks Breakdown
             const countUnlocks = monthlyLogs.filter(log => log.action.startsWith('unlock')).length;
             const countLocks = monthlyLogs.filter(log => log.action.startsWith('lock')).length;
             
             statMonthlyUnlocks.textContent = countUnlocks;
             statMonthlyLocks.textContent = countLocks;
 
-
-            // Metric 2: Auto-Lock Triggers (User forgot to lock)
             const autoLockCount = monthlyLogs.filter(log => log.action === 'lock (auto)').length;
             statAutoLock.textContent = autoLockCount;
 
-            // Metric 3: Security Threats (3x Consecutive Failures)
             let threatCount = 0;
             let consecutiveFails = 0;
 
-            // Sort logs by time ascending for accurate sequence detection
             const sortedLogs = [...monthlyLogs].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
             sortedLogs.forEach(log => {
@@ -818,17 +754,16 @@
                     consecutiveFails++;
                     if (consecutiveFails === 3) {
                         threatCount++;
-                        consecutiveFails = 0; // Reset after counting one threat sequence
+                        consecutiveFails = 0;
                     }
                 } else {
-                    consecutiveFails = 0; // Reset on success
+                    consecutiveFails = 0;
                 }
             });
 
             statThreats.textContent = threatCount;
         }
 
-        // --- Door Control ---
         async function lockDoor() {
             try {
                 const response = await fetch(`${API_URL}/door/lock`, { method: 'POST' });
@@ -850,13 +785,12 @@
                     pinInput.value = ''; 
                     refreshAllData();
                 } else {
-                    fetchLogs(); // Refresh logs first
-                    showPopup(); // TRIGGER POPUP HERE
+                    fetchLogs();
+                    showPopup();
                 }
             } catch (error) { console.error('Unlock failed'); }
         }
 
-        // --- Settings ---
         async function fetchConfig() {
             try {
                 const response = await fetch(`${API_URL}/config`);
@@ -866,7 +800,6 @@
                 scheduleLockTimeInput.value = data.schedule_lock_time;
                 scheduleUnlockTimeInput.value = data.schedule_unlock_time;
                 
-                // Load days if available, otherwise default
                 if (data.days) selectedDays = data.days;
                 updateDayButtons();
 
@@ -881,7 +814,7 @@
                 schedule_enabled: scheduleEnabledCheckbox.checked,
                 schedule_lock_time: scheduleLockTimeInput.value,
                 schedule_unlock_time: scheduleUnlockTimeInput.value,
-                days: selectedDays // Send selected days
+                days: selectedDays
             };
             try {
                 const response = await fetch(`${API_URL}/config`, {
@@ -901,7 +834,6 @@
             fetchLogs();
         }
 
-        // --- Init ---
         document.addEventListener('DOMContentLoaded', () => {
             refreshAllData();
             fetchConfig();
@@ -909,7 +841,6 @@
             setInterval(refreshAllData, 10000);
         });
 
-        // Event Listeners
         lockButton.addEventListener('click', lockDoor);
         unlockButton.addEventListener('click', unlockDoor);
         saveConfigButton.addEventListener('click', saveConfig);
