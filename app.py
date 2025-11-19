@@ -18,6 +18,8 @@ DB_CONFIG = {
 CORRECT_PIN = "1234"
 
 def init_db():
+    """Membuat tabel 'door_status', 'logs', dan 'config' jika belum ada"""
+    print("Mencoba koneksi ke MySQL dan inisialisasi tabel...")
     conn = None
     cursor = None
     try:
@@ -61,6 +63,7 @@ def init_db():
         if cursor.fetchone() is None:
             cursor.execute("INSERT INTO door_status (id, locked, last_access) VALUES (%s, %s, %s)", 
                            (1, True, datetime.datetime.now()))
+            print("Status pintu default (terkunci) dibuat.")
 
         cursor.execute("SELECT * FROM config WHERE id = 1")
         if cursor.fetchone() is None:
@@ -71,27 +74,33 @@ def init_db():
             """
             values = (1, 30, False, '22:00', '06:00', datetime.datetime.now())
             cursor.execute(query, values)
+            print("Pengaturan config default (auto-lock & schedule) dibuat.")
 
         try:
             cursor.execute("ALTER TABLE config ADD COLUMN schedule_enabled BOOLEAN NOT NULL DEFAULT 0")
             cursor.execute("ALTER TABLE config ADD COLUMN schedule_lock_time VARCHAR(5) NOT NULL DEFAULT '22:00'")
             cursor.execute("ALTER TABLE config ADD COLUMN schedule_unlock_time VARCHAR(5) NOT NULL DEFAULT '06:00'")
             conn.commit()
+            print("Kolom jadwal ditambahkan ke tabel config yang ada.")
         except Error as e:
-            if e.errno != 1060:
+            if e.errno == 1060:
+                pass
+            else:
                 raise
 
         conn.commit()
+        print("Database dan tabel (door_status, logs, config) siap (MySQL).")
         
     except Error as e:
         print(f"Error saat inisialisasi database MySQL: {e}")
     finally:
         if cursor:
             cursor.close()
-        if conn and conn.is_connected():
+        if 'conn' in locals() and conn and conn.is_connected():
             conn.close()
 
 def get_db_conn():
+    """Membuka koneksi baru ke DB MySQL"""
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
         return conn
@@ -100,6 +109,7 @@ def get_db_conn():
         return None
 
 def log_activity(action, success):
+    """Mencatat aktivitas ke tabel logs"""
     conn = None
     cursor = None
     try:
@@ -119,6 +129,7 @@ def log_activity(action, success):
             conn.close()
 
 def _perform_lock(conn, reason="lock"):
+    """Fungsi internal untuk mengunci pintu & log"""
     cursor = conn.cursor()
     query = "UPDATE door_status SET locked = %s, last_access = %s WHERE id = %s"
     values = (True, datetime.datetime.now(), 1)
@@ -126,8 +137,10 @@ def _perform_lock(conn, reason="lock"):
     conn.commit()
     log_activity(reason, True)
     cursor.close()
+    print(f"LOCK: Pintu telah terkunci (Alasan: {reason}).")
 
 def _perform_unlock(conn, reason="unlock"):
+    """Fungsi internal untuk membuka kunci pintu & log"""
     cursor = conn.cursor()
     query = "UPDATE door_status SET locked = %s, last_access = %s WHERE id = %s"
     values = (False, datetime.datetime.now(), 1)
@@ -135,6 +148,7 @@ def _perform_unlock(conn, reason="unlock"):
     conn.commit()
     log_activity(reason, True)
     cursor.close()
+    print(f"UNLOCK: Pintu telah dibuka (Alasan: {reason}).")
 
 @app.route('/door/status', methods=['GET'])
 def get_door_status():
@@ -145,7 +159,7 @@ def get_door_status():
         if not conn:
             return jsonify({"error": "Koneksi database gagal"}), 500
             
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(dictionary=True) 
         
         cursor.execute("SELECT locked, last_access FROM door_status WHERE id = 1")
         status = cursor.fetchone()
